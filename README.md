@@ -19,26 +19,34 @@ Instead of memorizing dozens of skills, you use 6 commands. Crewkit's engine aut
 ### Prerequisites
 
 - [Claude Code](https://claude.com/claude-code) installed and working
-- Git
 
-### Install (Global)
+### Install (Plugin — Recommended)
+
+Inside Claude Code, run:
+
+```bash
+# 1. Add crewkit marketplace
+/plugin marketplace add philippkeem/crewkit
+
+# 2. Install the plugin
+/plugin install crewkit@crewkit
+```
+
+Done. The `/crew` command is now available.
+
+### Install (Manual — Git Clone)
 
 ```bash
 git clone https://github.com/philippkeem/crewkit.git ~/.claude/skills/crewkit
 cd ~/.claude/skills/crewkit && ./setup
 ```
 
-This installs crewkit as a global Claude Code skill. The `/crew` command becomes available in **all your projects**.
-
-### Install (Per Project)
-
-If you prefer to scope crewkit to a single project:
+### Install (Per Project Only)
 
 ```bash
 cd your-project
 mkdir -p .claude/skills
 git clone https://github.com/philippkeem/crewkit.git .claude/skills/crewkit
-cd .claude/skills/crewkit && ./setup
 ```
 
 ### Verify Installation
@@ -48,8 +56,6 @@ Inside Claude Code:
 ```bash
 /crew doctor
 ```
-
-You should see:
 
 ```
 Crewkit Doctor
@@ -267,22 +273,25 @@ Each role receives the previous role's **handoff** — structured data containin
 
 ```
 crewkit/
-├── engine/
-│   ├── SKILL.md          # /crew entry point — command routing & pipeline orchestration
-│   ├── state.sh          # Pipeline state management helpers
-│   ├── pipeline.md       # Pipeline execution spec
-│   ├── monitor.md        # Status bar rendering spec
-│   └── handoff.md        # Role-to-role data contract
-├── roles/
-│   ├── planner/SKILL.md  # Design, architecture, debugging
-│   ├── builder/SKILL.md  # TDD implementation
-│   ├── reviewer/SKILL.md # Code review & quality gates
-│   ├── tester/SKILL.md   # Testing & QA
-│   └── shipper/SKILL.md  # Release & retrospective
-├── presets/               # Pipeline preset definitions
-├── install/               # Install & doctor skills
-├── .crewkit.yml.example   # Configuration template
-├── setup                  # CLI install script
+├── .claude-plugin/
+│   ├── plugin.json           # Plugin manifest
+│   └── marketplace.json      # Marketplace catalog
+├── skills/                   # Plugin skill entry points
+│   ├── crew/SKILL.md         # /crew engine — command routing & pipeline orchestration
+│   ├── crewkit-planner/      # Design, architecture, debugging
+│   ├── crewkit-builder/      # TDD implementation
+│   ├── crewkit-reviewer/     # Code review & quality gates
+│   ├── crewkit-tester/       # Testing & QA
+│   └── crewkit-shipper/      # Release & retrospective
+├── engine/                   # Engine support files
+│   ├── state.sh              # Pipeline state management helpers
+│   ├── pipeline.md           # Pipeline execution spec
+│   ├── monitor.md            # Status bar rendering spec
+│   └── handoff.md            # Role-to-role data contract
+├── roles/                    # Role reference (legacy/manual install)
+├── presets/                  # Pipeline preset definitions
+├── .crewkit.yml.example      # Configuration template
+├── setup                     # CLI install script
 └── package.json
 ```
 

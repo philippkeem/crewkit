@@ -1,0 +1,24 @@
+{
+  "name": "crewkit",
+  "version": "0.1.0",
+  "description": "Turn Claude Code into a team of 5 specialized experts with automated pipelines and real-time monitoring.",
+  "author": {
+    "name": "Philip Keem",
+    "email": "philippkeem@gmail.com",
+    "url": "https://github.com/philippkeem"
+  },
+  "homepage": "https://github.com/philippkeem/crewkit",
+  "repository": "https://github.com/philippkeem/crewkit",
+  "license": "MIT",
+  "keywords": [
+    "workflow",
+    "pipeline",
+    "team",
+    "roles",
+    "tdd",
+    "code-review",
+    "qa",
+    "release"
+  ],
+  "skills": "./skills/"
+}
