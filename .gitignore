@@ -4,3 +4,4 @@ roles/tester/browse/dist/
 .claude/
 *.log
 .DS_Store
+CLAUDE.md
