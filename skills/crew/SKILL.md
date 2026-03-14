@@ -57,6 +57,43 @@ When the user invokes `/crew <command> [args] [options]`, you:
 
 This is the exact procedure you MUST follow for every workflow command.
 
+### Pre-step: Version Check
+
+Before anything else, check if a newer version of crewkit is available.
+
+**IMPORTANT**: This check must be fast and non-blocking. Never let it delay the pipeline.
+
+```bash
+# Get installed version from this SKILL.md frontmatter (field: version)
+# Current version: 0.1.0
+
+# Fetch latest version from GitHub API (timeout 3 seconds to avoid blocking)
+curl -s --max-time 3 \
+  "https://api.github.com/repos/philippkeem/crewkit/releases/latest" \
+  | grep -o '"tag_name": *"[^"]*"' | head -1 | grep -o 'v[0-9.]*'
+```
+
+**If no releases exist yet**, fall back to comparing with the latest package.json on main:
+
+```bash
+curl -s --max-time 3 \
+  "https://raw.githubusercontent.com/philippkeem/crewkit/main/package.json" \
+  | grep -o '"version": *"[^"]*"' | grep -o '[0-9.]*'
+```
+
+**Compare versions**:
+- If remote version > installed version (from this file's frontmatter `version: 0.1.0`):
+  ```
+  [crewkit] ⚠ v<remote> available (current: v<installed>)
+           Run: /plugin update crewkit@crewkit
+  ```
+- If versions match or check fails: silently continue (no output)
+
+**Rules**:
+- If `curl` fails or times out, skip silently — never block the pipeline
+- Show the update notice ONCE at the top, then proceed normally
+- Do NOT auto-update — just notify
+
 ### Step 0: Parse & Validate
 
 ```
@@ -398,6 +435,10 @@ If installed via `git clone` into skills directory, role files are also at:
 
 ```
 /crew <command> [args] [options]
+  │
+  ├─► VERSION CHECK (non-blocking, 3s timeout)
+  │   ├── remote > local ──► show: ⚠ v<new> available
+  │   └── same or fail ───► silent continue
   │
   ├─► PARSE
   │   ├── command: plan | build | fix | review | ship | qa
