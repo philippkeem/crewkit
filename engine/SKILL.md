@@ -315,6 +315,41 @@ Guide the user through initial setup:
 3. Verify Claude Code skill registration
 4. Run `/crew doctor` to confirm everything works
 
+## LOCALE (Language)
+
+All user-facing output (progress bar messages, status updates, completion summaries, error messages) MUST follow the locale setting.
+
+### How Locale Works
+
+1. Read `locale` from `.crewkit.yml` (default: `"auto"`)
+2. Apply the locale rule:
+
+| Setting | Behavior |
+|---------|----------|
+| `auto` | Detect the language of the user's input and respond in that same language |
+| `en` | Always respond in English |
+| `ko` | Always respond in Korean |
+| `ja` | Always respond in Japanese |
+| `zh` | Always respond in Chinese |
+| Other | Use the specified ISO 639-1 language code |
+
+3. When launching role agents, include the resolved locale in the prompt so every role outputs in the correct language.
+
+### What Gets Localized
+
+- Monitor status bar action messages (e.g., "starting..." / "시작 중..." / "開始中...")
+- Pipeline completion messages
+- Error and pause messages
+- Role narrative output (analysis, reports, summaries)
+- Management command output (`/crew status`, `/crew doctor`, etc.)
+
+### What Does NOT Get Localized
+
+- YAML handoff blocks (`# CREWKIT_HANDOFF`) — always in English (machine-readable)
+- Config keys and values
+- File paths, tool names, score letters (A/B/C/D)
+- Git commands and output
+
 ## IMPORTANT RULES
 
 1. **ALWAYS show progress** — the user must see which role is active
@@ -324,6 +359,7 @@ Guide the user through initial setup:
 5. **Read each role's SKILL.md** before launching its agent — the instructions are there
 6. **Extract handoff YAML** from each role's response — look for `# CREWKIT_HANDOFF`
 7. **Handle errors gracefully** — if a role fails, pause the pipeline, don't crash
+8. **ALWAYS respect locale** — all user-facing output must follow the locale setting
 
 ## FINDING ROLE SKILL FILES
 

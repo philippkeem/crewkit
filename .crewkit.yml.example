@@ -5,6 +5,10 @@ project:
   name: "my-app"
   stack: "next.js + typescript"      # helps roles understand context
 
+locale: "auto"                         # auto | en | ko | ja | zh | es | fr | de | ...
+                                       # auto: detect from user's input language
+                                       # explicit: always use the specified language
+
 pipeline:
   build:
     skip: []                          # roles to skip: [reviewer, tester]

@@ -140,6 +140,13 @@ output:
     <1-3 sentence summary>
 ```
 
+## LOCALE
+
+All user-facing output (test reports, failure details, recommendations) MUST be in the user's language.
+- The engine will pass the resolved locale in the context (e.g., `locale: ko`)
+- If `locale: auto`, detect the language of the user's original request and respond in that language
+- The CREWKIT_HANDOFF YAML block is always in English (machine-readable)
+
 ## IMPORTANT RULES
 
 - NEVER report tests as passing without actually running them
