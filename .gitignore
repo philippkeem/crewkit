@@ -1,5 +1,6 @@
 node_modules/
 roles/tester/browse/dist/
 .crewkit/
+.claude/
 *.log
 .DS_Store
