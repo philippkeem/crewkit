@@ -22,30 +22,63 @@ Provide real-time visibility into what Crewkit is doing. The user should always 
 | progress-bar | Visual bar showing pipeline progress | `██████░░░░` |
 | current/total | Numeric progress | `2/3` |
 | role | Currently active role name | `planner`, `builder` |
-| action | Current tool or task description | `Grep 실행중...` |
+| action | Current tool or task description (localized) | `analyzing...` / `분석 중...` |
 
 ## State Transitions
 
 ### Normal Flow
+
+Action messages are displayed in the user's locale. Examples by language:
+
+#### English (locale: en)
+```
+[crewkit] build │ ██░░░░░░░░ 1/3 │ planner  │ analyzing requirements...
+[crewkit] build │ ██░░░░░░░░ 1/3 │ planner  │ writing design doc...
+[crewkit] build │ ██████░░░░ 2/3 │ builder  │ writing tests...
+[crewkit] build │ ██████░░░░ 2/3 │ builder  │ implementing... Edit
+[crewkit] build │ ██████░░░░ 2/3 │ builder  │ running tests... 12/12 pass
+[crewkit] build │ ██████████ 3/3 │ reviewer │ analyzing diff...
+[crewkit] build │ ██████████ 3/3 │ reviewer │ security check... Score: A
+✅ crewkit build complete │ 3/3 │ elapsed: 4m 32s
+```
+
+#### Korean (locale: ko)
 ```
 [crewkit] build │ ██░░░░░░░░ 1/3 │ planner  │ 요구사항 분석 중...
 [crewkit] build │ ██░░░░░░░░ 1/3 │ planner  │ 설계 문서 작성 중...
 [crewkit] build │ ██████░░░░ 2/3 │ builder  │ 테스트 작성 중...
-[crewkit] build │ ██████░░░░ 2/3 │ builder  │ 구현 중... Edit 실행
+[crewkit] build │ ██████░░░░ 2/3 │ builder  │ 구현 중... Edit
 [crewkit] build │ ██████░░░░ 2/3 │ builder  │ 테스트 실행 중... 12/12 pass
 [crewkit] build │ ██████████ 3/3 │ reviewer │ diff 분석 중...
 [crewkit] build │ ██████████ 3/3 │ reviewer │ 보안 체크... Score: A
 ✅ crewkit build 완료 │ 3/3 │ 소요: 4m 32s
 ```
 
+#### Japanese (locale: ja)
+```
+[crewkit] build │ ██░░░░░░░░ 1/3 │ planner  │ 要件分析中...
+[crewkit] build │ ██████░░░░ 2/3 │ builder  │ テスト実行中... 12/12 pass
+[crewkit] build │ ██████████ 3/3 │ reviewer │ セキュリティチェック... Score: A
+✅ crewkit build 完了 │ 3/3 │ 所要: 4m 32s
+```
+
 ### Error/Pause
 ```
+# English
+[crewkit] build │ ██████░░░░ 2/3 │ reviewer │ ❌ Score: D — 2 critical issues
+⏸ Pipeline paused │ check issues with /crew status │ fix and /crew resume
+
+# Korean
 [crewkit] build │ ██████░░░░ 2/3 │ reviewer │ ❌ Score: D — 2개 critical 이슈
 ⏸ 파이프라인 중단 │ /crew status로 이슈 확인 │ 수정 후 /crew resume
 ```
 
 ### Completion
 ```
+# English
+✅ crewkit <command> complete │ <n>/<n> │ elapsed: <elapsed>
+
+# Korean
 ✅ crewkit <command> 완료 │ <n>/<n> │ 소요: <elapsed>
 ```
 

@@ -20,5 +20,5 @@
     "qa",
     "release"
   ],
-  "skills": "./skills/"
+  "skills": ["./skills/", "./commands/"]
 }
