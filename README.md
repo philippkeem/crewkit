@@ -14,34 +14,46 @@ Crewkit is an open-source skill framework for [Claude Code](https://claude.com/c
 
 Instead of memorizing dozens of skills, you use 6 commands. Crewkit's engine automatically routes your intent to the right roles, passes context between them, and shows you progress in real time.
 
-## Quick Start
+## Installation
 
 ### Prerequisites
 
 - [Claude Code](https://claude.com/claude-code) installed and working
+- Git
 
-### Install (Plugin — Recommended)
+### Method 1: Plugin Marketplace (Recommended)
 
-Inside Claude Code, run:
+Claude Code 안에서 두 줄이면 끝입니다:
 
 ```bash
-# 1. Add crewkit marketplace
+# Step 1: crewkit 마켓플레이스 등록
 /plugin marketplace add philippkeem/crewkit
 
-# 2. Install the plugin
+# Step 2: 플러그인 설치
 /plugin install crewkit@crewkit
 ```
 
-Done. The `/crew` command is now available.
+설치 완료. `/crew build` 로 바로 시작할 수 있습니다.
 
-### Install (Manual — Git Clone)
+> **Update**: 업데이트가 필요할 때는 동일한 명령으로 재설치하면 최신 버전이 적용됩니다.
+
+### Method 2: Git Clone (Global)
+
+모든 프로젝트에서 사용할 수 있도록 글로벌로 설치합니다:
 
 ```bash
+# Step 1: Clone
 git clone https://github.com/philippkeem/crewkit.git ~/.claude/skills/crewkit
+
+# Step 2: Setup
 cd ~/.claude/skills/crewkit && ./setup
 ```
 
-### Install (Per Project Only)
+> **Update**: `cd ~/.claude/skills/crewkit && git pull`
+
+### Method 3: Git Clone (Per Project)
+
+특정 프로젝트에서만 사용하려면:
 
 ```bash
 cd your-project
@@ -49,9 +61,11 @@ mkdir -p .claude/skills
 git clone https://github.com/philippkeem/crewkit.git .claude/skills/crewkit
 ```
 
-### Verify Installation
+> 프로젝트에 `.claude/skills/` 디렉토리가 있으면 Claude Code가 자동으로 인식합니다.
 
-Inside Claude Code:
+### Verify
+
+설치 후 Claude Code 안에서:
 
 ```bash
 /crew doctor
@@ -62,6 +76,17 @@ Crewkit Doctor
 ══════════════
 Environment:  ✓ git  ✓ node
 Installation: ✓ engine  ✓ planner  ✓ builder  ✓ reviewer  ✓ tester  ✓ shipper
+✅ All checks passed
+```
+
+### Uninstall
+
+```bash
+# Plugin 방식
+/plugin uninstall crewkit@crewkit
+
+# Git Clone 방식
+rm -rf ~/.claude/skills/crewkit
 ```
 
 ## Usage
