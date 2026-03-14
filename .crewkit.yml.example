@@ -1,0 +1,26 @@
+# Crewkit Configuration
+# Copy this file to your project root as .crewkit.yml
+
+project:
+  name: "my-app"
+  stack: "next.js + typescript"      # helps roles understand context
+
+pipeline:
+  build:
+    skip: []                          # roles to skip: [reviewer, tester]
+    reviewer:
+      gate: "C"                       # minimum score: A | B | C | D
+  ship:
+    strategy: "pr"                    # pr | auto-merge | direct-push
+    changelog: true                   # auto-generate CHANGELOG.md
+    version-bump: "semver"            # semver | calver | manual
+
+tester:
+  browse:
+    base-url: "http://localhost:3000" # URL for browser tests
+    cookies-from: "chrome"            # chrome | arc | brave | edge
+  coverage:
+    minimum: 80                       # minimum test coverage %
+
+monitor:
+  verbose: true                       # show tool-level details in status bar

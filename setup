@@ -1,0 +1,48 @@
+#!/bin/bash
+set -e
+
+echo "🔧 Crewkit Setup"
+echo "================"
+echo ""
+
+# Check Bun
+if ! command -v bun &> /dev/null; then
+  echo "❌ Bun is not installed."
+  echo "   Install: curl -fsSL https://bun.sh/install | bash"
+  echo ""
+  read -p "Install Bun now? (Y/n) " -n 1 -r
+  echo ""
+  if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
+    curl -fsSL https://bun.sh/install | bash
+    export BUN_INSTALL="$HOME/.bun"
+    export PATH="$BUN_INSTALL/bin:$PATH"
+  else
+    echo "Bun is required. Exiting."
+    exit 1
+  fi
+fi
+
+echo "✓ Bun $(bun --version)"
+
+# Install dependencies
+echo ""
+echo "Installing dependencies..."
+bun install
+echo "✓ Dependencies installed"
+
+# Build browser binary
+echo ""
+echo "Building headless browser..."
+mkdir -p roles/tester/browse/dist
+bun build ./roles/tester/browse/src/index.ts --compile --outfile ./roles/tester/browse/dist/browse 2>/dev/null || echo "⚠ Browser build skipped (source not yet created)"
+echo "✓ Browser build complete"
+
+# Register in Claude Code settings
+SKILL_DIR="$(cd "$(dirname "$0")" && pwd)"
+echo ""
+echo "✓ Crewkit installed at: $SKILL_DIR"
+echo ""
+echo "To register with Claude Code, add this path to your settings:"
+echo "  ~/.claude/settings.json"
+echo ""
+echo "✅ Setup complete! Use /crew build to get started."

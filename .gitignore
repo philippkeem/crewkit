@@ -1,0 +1,5 @@
+node_modules/
+roles/tester/browse/dist/
+.crewkit/
+*.log
+.DS_Store

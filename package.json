@@ -1,0 +1,28 @@
+{
+  "name": "crewkit",
+  "version": "0.1.0",
+  "description": "Turn Claude Code into a team of specialized experts with role-based pipelines and real-time monitoring.",
+  "author": "crewkit",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/crewkit/crewkit.git"
+  },
+  "keywords": [
+    "claude-code",
+    "skill",
+    "plugin",
+    "ai",
+    "developer-tools",
+    "code-review",
+    "tdd",
+    "qa",
+    "pipeline"
+  ],
+  "scripts": {
+    "build:browse": "bun build ./roles/tester/browse/src/index.ts --compile --outfile ./roles/tester/browse/dist/browse"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.50.0"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Bash",
+      "Grep",
+      "Glob",
+      "Agent"
+    ]
+  },
+  "skills": {
+    "crewkit-engine": {
+      "path": "./engine/SKILL.md",
+      "command": "crew"
+    }
+  }
+}
