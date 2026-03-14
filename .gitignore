@@ -5,3 +5,4 @@ roles/tester/browse/dist/
 *.log
 .DS_Store
 CLAUDE.md
+.envrc
