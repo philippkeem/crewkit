@@ -1,0 +1,16 @@
+# Default owner for everything
+* @philippkeem
+
+# Engine core
+/engine/ @philippkeem
+/skills/crew/ @philippkeem
+
+# Roles
+/roles/ @philippkeem
+/skills/crewkit-*/ @philippkeem
+
+# Plugin manifest
+/.claude-plugin/ @philippkeem
+
+# CI and repo config
+/.github/ @philippkeem

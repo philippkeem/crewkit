@@ -139,3 +139,80 @@ output:
 - If build fails, fix it before completing — do NOT hand off broken code
 - Keep changes minimal and focused — no drive-by refactoring
 - Respect the planner's design decisions — don't redesign
+
+---
+
+## Flow Diagram
+
+### Builder Execution Flow
+
+```
+PLANNER HANDOFF ──► { design, files, decisions, plan_steps }
+  │
+  ├─► [1] READ HANDOFF
+  │   └── extract plan_steps + files + design intent
+  │
+  ├─► [2] ASSESS PARALLELIZATION
+  │   │
+  │   │   step dependencies?
+  │   ├── independent steps ──► group into parallel batches
+  │   └── dependent steps ───► mark sequential order
+  │
+  ├─► [3] FOR EACH STEP: TDD CYCLE
+  │   │
+  │   │   ┌──────────────────────────────────────────┐
+  │   │   │          TDD Loop (per step)             │
+  │   │   │                                          │
+  │   │   │   RED ──► write test ──► run ──► fails?  │
+  │   │   │   │                              │   │   │
+  │   │   │   │                         no ◄─┘   │   │
+  │   │   │   │   fix the test ◄────────┘    yes │   │
+  │   │   │   │                                  │   │
+  │   │   │   │   GREEN ──► write code ──► run ──► passes?
+  │   │   │   │   │                          │   │   │
+  │   │   │   │   │                     no ◄─┘   │   │
+  │   │   │   │   │   fix the code ◄────┘    yes │   │
+  │   │   │   │   │                              │   │
+  │   │   │   │   │   REFACTOR ──► clean up ──► run ──► still passes?
+  │   │   │   │   │                                │   │   │
+  │   │   │   │   │                           no ◄─┘   │   │
+  │   │   │   │   │   undo refactor ◄─────────┘   yes │   │
+  │   │   │   │   │                                    │   │
+  │   │   │   │   └────────────── step complete ◄──────┘   │
+  │   │   │                                                │
+  │   │   └────────────────────────────────────────────────┘
+  │   │
+  │   └── next step (or parallel batch)
+  │
+  ├─► [4] INTEGRATION VERIFICATION
+  │   ├── run full test suite
+  │   ├── check build compiles
+  │   └── check coverage >= threshold
+  │       │
+  │       ├── coverage OK ──► proceed
+  │       └── below threshold ──► add more tests ──► re-check
+  │
+  └─► [5] REPORT
+      │
+      └─► OUTPUT: CREWKIT_HANDOFF { changes, tests, coverage, build_status }
+```
+
+### Parallelization Decision Tree
+
+```
+Plan steps: [1, 2, 3, 4, 5]
+  │
+  ├─► Analyze dependencies
+  │   step 1: no deps         ──► batch A
+  │   step 2: no deps         ──► batch A
+  │   step 3: depends on 1    ──► batch B
+  │   step 4: depends on 2    ──► batch B
+  │   step 5: depends on 3,4  ──► batch C
+  │
+  ├─► Execute:
+  │   batch A: [step 1, step 2] ──► parallel Agents ──► wait
+  │   batch B: [step 3, step 4] ──► parallel Agents ──► wait
+  │   batch C: [step 5]         ──► single Agent     ──► done
+  │
+  └─► Integration test after all batches
+```

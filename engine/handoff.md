@@ -105,3 +105,67 @@ output:
 2. The next role MUST read the previous handoff before starting
 3. If a role fails, it should produce a partial handoff with error details
 4. Handoff data is ephemeral — exists only during pipeline execution
+
+---
+
+## Flow Diagram
+
+### Complete Handoff Chain
+
+```
+                    ┌─────────────────────────────────────────────┐
+                    │           PIPELINE DATA FLOW                │
+                    └─────────────────────────────────────────────┘
+
+USER REQUEST ──► planner
+                   │
+                   ├── design: "summary of solution"
+                   ├── files: [src/api.ts, src/model.ts]
+                   ├── decisions: ["use REST not GraphQL"]
+                   └── plan_steps: [{step:1, ...}, {step:2, ...}]
+                        │
+                        ▼
+                   builder (reads planner handoff)
+                   │
+                   ├── changes: [{file: src/api.ts, action: created}]
+                   ├── tests: [tests/api.test.ts]
+                   ├── coverage: "87%"
+                   └── build_status: "pass"
+                        │
+                        ▼
+                   reviewer (reads planner + builder handoffs)
+                   │
+                   ├── score: "B"
+                   ├── approved: true
+                   ├── issues: [{severity: info, file: src/api.ts, ...}]
+                   └── summary: "approved with minor suggestions"
+                        │
+                        ▼
+                   tester (reads builder + reviewer handoffs)
+                   │
+                   ├── passed: 12
+                   ├── failed: 0
+                   ├── coverage: "87%"
+                   └── report: "all tests pass, ready for release"
+                        │
+                        ▼
+                   shipper (reads all previous handoffs)
+                   │
+                   ├── version: "1.2.0"
+                   ├── changelog_updated: true
+                   ├── pr_url: "https://github.com/.../pull/42"
+                   └── retro: {commits: 5, summary: "clean release"}
+
+
+Storage: .crewkit/handoff-<role>.json (per role, overwritten each run)
+```
+
+### What Each Role Reads From Previous Handoffs
+
+```
+planner  ──► reads: nothing (first in pipeline)
+builder  ──► reads: planner.plan_steps, planner.files, planner.design
+reviewer ──► reads: builder.changes, builder.tests, builder.coverage
+tester   ──► reads: builder.changes (for diff-qa), reviewer.issues
+shipper  ──► reads: reviewer.approved, reviewer.score, tester.passed, tester.failed
+```

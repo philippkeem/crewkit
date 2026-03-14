@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Contributing Guide
+    url: https://github.com/philippkeem/crewkit/blob/main/docs/GIT_POLICY.md#10-기여-가이드-contributing-guide
+    about: Read the contributing guide before opening a PR
+  - name: Discussions
+    url: https://github.com/philippkeem/crewkit/discussions
+    about: Ask questions or discuss ideas

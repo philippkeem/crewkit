@@ -353,3 +353,92 @@ If installed via `git clone` into skills directory, role files are also at:
 <crewkit-dir>/roles/tester/SKILL.md
 <crewkit-dir>/roles/shipper/SKILL.md
 ```
+
+---
+
+## Flow Diagram
+
+### Command Processing Flow
+
+```
+/crew <command> [args] [options]
+  │
+  ├─► PARSE
+  │   ├── command: plan | build | fix | review | ship | qa
+  │   ├── args:    free text passed to first role
+  │   └── options: --skip | --only | --dry-run | --resume
+  │
+  ├─► LOAD CONFIG
+  │   ├── .crewkit.yml found? ──► read project config
+  │   └── not found? ──────────► use defaults (gate:C, strategy:pr, coverage:80%)
+  │
+  ├─► BUILD PIPELINE
+  │   │
+  │   │   command        pipeline
+  │   ├── plan      ──► [planner]
+  │   ├── build     ──► [planner] → [builder] → [reviewer]
+  │   ├── fix       ──► [planner:debug] → [builder] → [tester]
+  │   ├── review    ──► [reviewer] → [tester]
+  │   ├── ship      ──► [reviewer] → [tester] → [shipper]
+  │   └── qa        ──► [tester]
+  │
+  ├─► APPLY OPTIONS
+  │   ├── --skip reviewer  ──► remove reviewer from pipeline
+  │   ├── --only planner   ──► keep only planner
+  │   ├── --dry-run        ──► set read-only mode
+  │   └── --resume         ──► load .crewkit/state.json, skip completed roles
+  │
+  ├─► INIT STATE
+  │   └── write .crewkit/state.json { pipeline_id, command, roles, status:running }
+  │
+  └─► EXECUTE PIPELINE (for each role)
+      │
+      ├─► [1] SHOW PROGRESS
+      │   └── [crewkit] build │ ██░░░░░░░░ 1/3 │ planner │ starting...
+      │
+      ├─► [2] READ ROLE SKILL.MD
+      │   └── skills/crewkit-<role>/SKILL.md
+      │
+      ├─► [3] LAUNCH AGENT
+      │   ├── prompt = SKILL.md + user args + previous handoff + config
+      │   └── Agent executes role autonomously
+      │
+      ├─► [4] EXTRACT HANDOFF
+      │   ├── scan response for "# CREWKIT_HANDOFF" marker
+      │   └── parse YAML block → save to .crewkit/handoff-<role>.json
+      │
+      ├─► [5] GATE CHECK (reviewer only)
+      │   │
+      │   │   score vs gate threshold
+      │   ├── score >= gate ──► approved ──► continue pipeline
+      │   └── score < gate  ──► PAUSE ──► write state { status:paused }
+      │                                    show: ⏸ Pipeline paused
+      │
+      └─► [6] ADVANCE
+          ├── update current_role_index in state
+          └── loop to next role or COMPLETE
+```
+
+### Management Commands
+
+```
+/crew status  ──► read .crewkit/state.json ──► display pipeline state
+/crew resume  ──► read state ──► verify paused ──► continue from current_role_index
+/crew config  ──► .crewkit.yml exists? ──► edit : create from example
+/crew doctor  ──► check git, node, bun ──► check skill files ──► report
+/crew install ──► check env ──► create config ──► verify registration
+```
+
+### Error / Pause / Resume Flow
+
+```
+Normal:    role 1 ✓ ──► role 2 ✓ ──► role 3 ✓ ──► ✅ complete
+                                         │
+Gate fail: role 1 ✓ ──► role 2 ✓ ──► reviewer score:D ──► ⏸ paused
+                                                            │
+Resume:                                    /crew resume ◄───┘
+                                               │
+                                               └──► re-run from paused role ──► continue
+
+Agent error: role crashes ──► catch error ──► ⏸ paused with error details
+```

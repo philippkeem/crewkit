@@ -69,3 +69,46 @@ Controlled by `.crewkit.yml` → `monitor.verbose`:
 |-------|-------|
 | `false` | command + progress bar + role only |
 | `true` (default) | + current tool/action details |
+
+---
+
+## Flow Diagram
+
+### Status Bar Rendering
+
+```
+[crewkit] <cmd> │ <bar> <n>/<total> │ <role> │ <action>
+     │               │                  │          │
+     │               │                  │          └── current tool/task
+     │               │                  └── active role name
+     │               └── ██████░░░░ visual progress
+     └── build / fix / ship / qa / review
+```
+
+### Update Trigger Points
+
+```
+Pipeline start ──► [crewkit] build │ ░░░░░░░░░░ 0/3 │ --- │ initializing...
+  │
+  ├── role start ──► [crewkit] build │ ██░░░░░░░░ 1/3 │ planner │ starting...
+  │   │
+  │   ├── tool call ──► ... │ planner │ Glob: searching files...
+  │   ├── substep ───► ... │ planner │ writing design doc...
+  │   └── role done ──► ... │ planner │ ✓ complete
+  │
+  ├── next role ──► [crewkit] build │ ██████░░░░ 2/3 │ builder │ starting...
+  │   └── (same trigger cycle)
+  │
+  └── pipeline done ──► ✅ crewkit build complete │ 3/3 │ elapsed: 4m 32s
+```
+
+### State Transitions
+
+```
+RUNNING ──────────────────────────────────► COMPLETE
+   │                                           │
+   │   gate fail or error                      │
+   └──► PAUSED ──► /crew resume ──► RUNNING ───┘
+            │
+            └── show: ⏸ Pipeline paused │ reason
+```

@@ -85,3 +85,49 @@ Execute roles but prevent any write operations (no file edits, no git commits, n
 
 ### --resume
 Find the last paused pipeline state and continue from where it stopped.
+
+---
+
+## Flow Diagram
+
+### Pipeline Lifecycle
+
+```
+INIT ──► EXECUTE ──► GATE CHECK ──► COMPLETE or PAUSE
+  │         │            │
+  │         │            ├── approved ──► next role ──► loop EXECUTE
+  │         │            └── rejected ──► PAUSE state
+  │         │
+  │         └── role agent runs ──► produces handoff ──► extracted
+  │
+  └── state.json created { status: running, roles: [...] }
+```
+
+### Option Processing
+
+```
+Original pipeline: [planner, builder, reviewer]
+  │
+  ├── --skip reviewer ──► [planner, builder]
+  ├── --only builder  ──► [builder]
+  ├── --dry-run       ──► [planner, builder, reviewer] (read-only mode)
+  └── --resume        ──► load state ──► [reviewer] (skip completed roles)
+```
+
+### Handoff Data Flow Between Roles
+
+```
+planner ──► { design, files, decisions, plan_steps }
+    │
+    ▼
+builder ──► { changes, tests, coverage, build_status }
+    │
+    ▼
+reviewer ──► { score, approved, issues, summary }
+    │
+    ▼
+tester ──► { passed, failed, coverage, screenshots, report }
+    │
+    ▼
+shipper ──► { version, changelog_updated, pr_url, retro }
+```

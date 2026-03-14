@@ -149,3 +149,110 @@ output:
 - If no test framework is found, report that clearly — do not pretend tests exist
 - In browse mode, always take screenshots as evidence
 - In diff-qa mode, cast a wide net — include indirectly affected areas
+
+---
+
+## Flow Diagram
+
+### Mode Selection
+
+```
+Input: command context + config
+  │
+  ├── /crew build pipeline ──► UNIT mode (default)
+  ├── /crew fix pipeline ───► UNIT mode (verify fix)
+  ├── /crew review pipeline ► UNIT + DIFF-QA mode
+  ├── /crew qa explicit ────► FULL mode
+  │
+  └── config has base-url? ──► add BROWSE to active modes
+```
+
+### Test Framework Auto-Detection
+
+```
+Project root
+  │
+  ├── package.json exists?
+  │   ├── "jest" in deps ──────► npm test
+  │   ├── "vitest" in deps ───► npx vitest run
+  │   ├── "scripts.test" ─────► npm test
+  │   └── bun.lockb exists ───► bun test
+  │
+  ├── go.mod exists? ──────────► go test ./...
+  ├── pyproject.toml / pytest.ini? ► pytest --tb=short -q
+  ├── Cargo.toml exists? ─────► cargo test
+  │
+  └── none found ──────────────► report: "no test framework detected"
+```
+
+### Unit Mode Flow
+
+```
+DETECT FRAMEWORK
+  │
+  ├─► RUN TESTS ──► capture output
+  │   │
+  │   ├── parse: total / passed / failed / skipped
+  │   └── parse: coverage percentage
+  │
+  ├─► CHECK COVERAGE
+  │   │
+  │   │   coverage vs threshold (default: 80%)
+  │   ├── >= threshold ──► ✓ pass
+  │   └── < threshold ──► ⚠ flag prominently
+  │
+  └─► REPORT ──► OUTPUT: CREWKIT_HANDOFF
+```
+
+### Diff-QA Mode Flow
+
+```
+git diff HEAD~1 --name-only
+  │
+  ├─► MAP CHANGED FILES TO FEATURES
+  │   │
+  │   │   src/api/users.ts changed
+  │   ├── related tests: tests/api/users.test.ts
+  │   ├── affected pages: /profile, /users
+  │   └── indirect: components importing users API
+  │
+  ├─► RUN RELATED TESTS ONLY
+  │   └── targeted test execution
+  │
+  ├─► BROWSE AFFECTED PAGES (if browse enabled)
+  │   └── navigate → interact → screenshot → assert
+  │
+  └─► REPORT ──► OUTPUT: CREWKIT_HANDOFF
+```
+
+### Browse Mode Flow
+
+```
+CONFIG: base-url = http://localhost:3000
+  │
+  ├─► CHECK SERVER RUNNING
+  │   ├── responds ──► continue
+  │   └── no response ──► skip, note in report
+  │
+  ├─► FOR EACH PAGE:
+  │   ├── navigate(url)
+  │   ├── wait for load
+  │   ├── screenshot(name)
+  │   ├── check console errors
+  │   └── assert key elements visible
+  │
+  └─► REPORT with screenshots
+```
+
+### Full Mode Flow
+
+```
+/crew qa
+  │
+  ├─► [1] UNIT ──► run all tests + coverage
+  ├─► [2] DIFF-QA ──► analyze changes + targeted tests
+  ├─► [3] BROWSE ──► headless browser checks (if configured)
+  └─► [4] COMPREHENSIVE REPORT
+      │
+      └─► OUTPUT: CREWKIT_HANDOFF { passed, failed, coverage, screenshots, report }
+```

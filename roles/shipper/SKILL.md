@@ -171,3 +171,91 @@ output:
 - If there are no changes to ship, report that and stop
 - Save retro data for trend tracking across releases
 - Use Conventional Commits format for the release commit
+
+---
+
+## Flow Diagram
+
+### Pre-flight Check
+
+```
+INCOMING HANDOFFS
+  │
+  ├─► reviewer.approved == true?
+  │   ├── yes ──► ✓
+  │   └── no ───► STOP: "reviewer did not approve"
+  │
+  ├─► tester.failed == 0?
+  │   ├── yes ──► ✓
+  │   └── no ───► STOP: "N tests failing"
+  │
+  └─► builder.build_status == "pass"?
+      ├── yes ──► ✓ all checks passed ──► proceed to ship
+      └── no ───► STOP: "build is broken"
+```
+
+### Ship Process Flow
+
+```
+PRE-FLIGHT PASSED
+  │
+  ├─► [1] SYNC
+  │   ├── git fetch origin
+  │   ├── uncommitted changes?
+  │   │   ├── yes ──► ask user: commit now?
+  │   │   └── no ───► continue
+  │   └── rebase on main if needed
+  │
+  ├─► [2] VERSION BUMP
+  │   │
+  │   │   analyze commits for bump type:
+  │   ├── BREAKING CHANGE / feat! ──► major (1.0.0 → 2.0.0)
+  │   ├── feat: ───────────────────► minor (1.0.0 → 1.1.0)
+  │   └── fix: / refactor: ───────► patch (1.0.0 → 1.0.1)
+  │   │
+  │   └── update package.json + other version files
+  │
+  ├─► [3] CHANGELOG
+  │   │
+  │   │   config changelog: true?
+  │   ├── yes ──► analyze commits since last tag
+  │   │          ├── group by type (feat/fix/refactor/...)
+  │   │          └── prepend to CHANGELOG.md
+  │   └── no ───► skip
+  │
+  ├─► [4] COMMIT & BRANCH
+  │   ├── git checkout -b release/v<version>
+  │   ├── git add package.json CHANGELOG.md
+  │   └── git commit -m "release: v<version>"
+  │
+  ├─► [5] CREATE PR / PUSH
+  │   │
+  │   │   config ship.strategy:
+  │   ├── "pr" (default) ──► gh pr create ──► wait for manual merge
+  │   ├── "auto-merge" ───► gh pr create --auto ──► ask user first
+  │   └── "direct-push" ──► ask user confirmation ──► git push
+  │
+  └─► [6] RETROSPECTIVE
+      ├── gather stats: commits, files, lines, timeline
+      ├── format retro report
+      └── save to .crewkit/retros/<date>-v<version>.md
+          │
+          └─► OUTPUT: CREWKIT_HANDOFF { version, changelog, pr_url, retro }
+```
+
+### Strategy Decision Tree
+
+```
+ship.strategy config
+  │
+  ├── "pr" ──────────────► create PR ──► done (user merges manually)
+  │                         safest option, recommended for open-source
+  │
+  ├── "auto-merge" ─────► ask user: "auto-merge this PR?"
+  │                         ├── yes ──► create PR + enable auto-merge
+  │                         └── no ───► fall back to "pr"
+  │
+  └── "direct-push" ────► ask user: "push directly to main?"
+                            ├── yes ──► git push origin main
+                            └── no ───► fall back to "pr"
+```

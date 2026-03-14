@@ -165,3 +165,99 @@ output:
 - Read every line of every changed file — do not skim
 - Do NOT suggest stylistic changes unless they affect readability
 - Be constructive — explain WHY something is an issue, not just THAT it is
+
+---
+
+## Flow Diagram
+
+### Review Pipeline
+
+```
+BUILDER HANDOFF ──► { changes, tests, coverage, build_status }
+  │
+  ├─► [1] GATHER CONTEXT
+  │   ├── read builder handoff (files, tests, coverage)
+  │   ├── read planner handoff (design intent)
+  │   └── git diff HEAD~1 (actual changes)
+  │
+  ├─► [2] AUTOMATED CHECKS
+  │   ├── npm test ──► pass / fail
+  │   ├── npm run lint ──► pass / fail
+  │   └── npm run build ──► pass / fail
+  │   │
+  │   └── any fail? ──► automatic score D
+  │
+  ├─► [3] MANUAL REVIEW (per changed file)
+  │   │
+  │   │   ┌─────────────── CHECKLIST ───────────────┐
+  │   │   │                                         │
+  │   │   │  SECURITY (critical)                    │
+  │   │   │  ├── SQL injection?                     │
+  │   │   │  ├── XSS?                               │
+  │   │   │  ├── secrets in code?                    │
+  │   │   │  ├── command injection?                  │
+  │   │   │  └── auth/authz gaps?                    │
+  │   │   │                                         │
+  │   │   │  DATA SAFETY (critical)                 │
+  │   │   │  ├── migration reversible?              │
+  │   │   │  ├── data loss risk?                    │
+  │   │   │  └── transactions used?                 │
+  │   │   │                                         │
+  │   │   │  LOGIC (high)                           │
+  │   │   │  ├── edge cases?                        │
+  │   │   │  ├── error handling?                    │
+  │   │   │  └── race conditions?                   │
+  │   │   │                                         │
+  │   │   │  PERFORMANCE (medium)                   │
+  │   │   │  ├── N+1 queries?                       │
+  │   │   │  ├── missing indexes?                   │
+  │   │   │  └── pagination?                        │
+  │   │   │                                         │
+  │   │   │  QUALITY (medium)                       │
+  │   │   │  ├── readable?                          │
+  │   │   │  ├── dead code?                         │
+  │   │   │  └── test coverage?                     │
+  │   │   │                                         │
+  │   │   └─────────────────────────────────────────┘
+  │   │
+  │   └── collect issues with severity + file + line
+  │
+  ├─► [4] SCORE
+  │   │
+  │   │   issues found?
+  │   ├── none ────────────────────────────► A (excellent)
+  │   ├── info only ───────────────────────► B (good)
+  │   ├── warnings, no critical ───────────► C (acceptable)
+  │   └── any critical OR test/build fail ─► D (needs work)
+  │
+  └─► [5] GATE DECISION
+      │
+      │   score vs config gate (default: C)
+      │
+      │   A > B > C > D
+      │
+      ├── score >= gate ──► approved: true  ──► pipeline continues
+      └── score < gate  ──► approved: false ──► pipeline PAUSES
+          │
+          └─► OUTPUT: CREWKIT_HANDOFF { score, approved, issues, summary }
+```
+
+### Scoring Quick Reference
+
+```
+              ┌──────────────────────────────────────┐
+              │           SCORE TRIGGERS              │
+              ├──────────┬───────────────────────────┤
+              │ Score A  │ zero issues               │
+              │ Score B  │ info suggestions only     │
+              │ Score C  │ warnings (no critical)    │
+              │ Score D  │ critical issue            │
+              │          │ OR tests failing          │
+              │          │ OR build failing          │
+              └──────────┴───────────────────────────┘
+
+Gate: A ──► only score A passes
+Gate: B ──► scores A, B pass
+Gate: C ──► scores A, B, C pass (default)
+Gate: D ──► everything passes (not recommended)
+```

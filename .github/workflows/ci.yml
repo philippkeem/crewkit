@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate Crewkit Structure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify plugin manifest
+        run: |
+          echo "Checking .claude-plugin/plugin.json..."
+          test -f .claude-plugin/plugin.json
+          echo "  OK"
+
+      - name: Verify engine skill
+        run: |
+          echo "Checking engine entry point..."
+          test -f skills/crew/SKILL.md
+          echo "  OK"
+
+      - name: Verify all role skills (plugin structure)
+        run: |
+          echo "Checking plugin skill files..."
+          for role in planner builder reviewer tester shipper; do
+            file="skills/crewkit-${role}/SKILL.md"
+            if [ ! -f "$file" ]; then
+              echo "  MISSING: $file"
+              exit 1
+            fi
+            echo "  OK: $file"
+          done
+
+      - name: Verify all role skills (legacy structure)
+        run: |
+          echo "Checking legacy role files..."
+          for role in planner builder reviewer tester shipper; do
+            file="roles/${role}/SKILL.md"
+            if [ ! -f "$file" ]; then
+              echo "  MISSING: $file"
+              exit 1
+            fi
+            echo "  OK: $file"
+          done
+
+      - name: Validate YAML frontmatter in SKILL.md files
+        run: |
+          echo "Validating YAML frontmatter..."
+          errors=0
+          for file in skills/*/SKILL.md roles/*/SKILL.md engine/SKILL.md; do
+            [ -f "$file" ] || continue
+            # Check file starts with ---
+            if ! head -1 "$file" | grep -q "^---$"; then
+              echo "  FAIL: $file — missing YAML frontmatter"
+              errors=$((errors + 1))
+              continue
+            fi
+            # Check required fields
+            frontmatter=$(sed -n '1,/^---$/p' "$file" | tail -n +2 | head -n -1)
+            for field in name version description; do
+              if ! echo "$frontmatter" | grep -q "^${field}:"; then
+                echo "  FAIL: $file — missing field: $field"
+                errors=$((errors + 1))
+              fi
+            done
+            echo "  OK: $file"
+          done
+          if [ $errors -gt 0 ]; then
+            echo "Found $errors validation errors"
+            exit 1
+          fi
+
+      - name: Shellcheck engine scripts
+        run: |
+          if command -v shellcheck &> /dev/null; then
+            echo "Running shellcheck on engine/state.sh..."
+            shellcheck engine/state.sh || true
+          else
+            echo "shellcheck not available, installing..."
+            sudo apt-get install -y shellcheck
+            shellcheck engine/state.sh || true
+          fi
+
+      - name: Verify preset files
+        run: |
+          echo "Checking preset files..."
+          for preset in full-cycle quick-fix review-only ship-only; do
+            file="presets/${preset}.md"
+            if [ ! -f "$file" ]; then
+              echo "  MISSING: $file"
+              exit 1
+            fi
+            echo "  OK: $file"
+          done
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "================================"
+          echo "  Crewkit CI — All checks passed"
+          echo "================================"
+          echo ""
+          echo "Plugin:  $(jq -r '.name + " v" + .version' .claude-plugin/plugin.json)"
+          echo "Skills:  $(ls -d skills/*/SKILL.md | wc -l | tr -d ' ') found"
+          echo "Roles:   $(ls -d roles/*/SKILL.md | wc -l | tr -d ' ') found"
+          echo "Presets: $(ls presets/*.md | wc -l | tr -d ' ') found"

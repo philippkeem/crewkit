@@ -119,3 +119,98 @@ output:
 - Every plan_step must be actionable — "implement X" not "think about X"
 - If you need clarification from the user, ask ONE question at a time
 - In debug mode, identify root cause with evidence before proposing a fix
+
+---
+
+## Flow Diagram
+
+### Mode Selection
+
+```
+Input: user request + command context
+  │
+  ├── /crew plan or /crew build ──► auto-detect:
+  │   │
+  │   ├── new feature / idea ────────────────► PRODUCT mode
+  │   ├── refactoring / technical change ────► ARCHITECTURE mode
+  │   └── ambiguous ─────────────────────────► ask user
+  │
+  └── /crew fix ─────────────────────────────► DEBUG mode (forced)
+```
+
+### Product Mode Flow
+
+```
+USER REQUEST
+  │
+  ├─► [1] Understand Problem
+  │   └── Glob + Read: scan codebase for existing related code
+  │
+  ├─► [2] Challenge Premises
+  │   └── is this the right problem? is it already solved?
+  │
+  ├─► [3] Define Scope
+  │   ├── 10-star version (ideal)
+  │   ├── proposed scope (user's ask)
+  │   └── MVP (minimum) ◄── recommend this
+  │
+  ├─► [4] Design Solution
+  │   ├── component breakdown
+  │   ├── data flow: input → process → output
+  │   └── API surface
+  │
+  ├─► [5] List Files
+  │   ├── create: [new files]
+  │   └── modify: [existing files]
+  │
+  └─► [6] Write Plan Steps
+      └── ordered steps with acceptance criteria
+          │
+          └─► OUTPUT: CREWKIT_HANDOFF { design, files, decisions, plan_steps }
+```
+
+### Architecture Mode Flow
+
+```
+USER REQUEST
+  │
+  ├─► [1] Read Existing Code ──► Glob + Read: map current architecture
+  ├─► [2] Identify Components ──► what changes, what stays
+  ├─► [3] Design Data Flow ──► input → processing → output (per component)
+  ├─► [4] Map Edge Cases ──► failure modes, boundary conditions
+  ├─► [5] Define Interfaces ──► function signatures, types, contracts
+  └─► [6] Write Plan ──► steps with dependency order
+      │
+      └─► OUTPUT: CREWKIT_HANDOFF { design, files, decisions, plan_steps }
+```
+
+### Debug Mode Flow
+
+```
+BUG REPORT / ERROR
+  │
+  ├─► [1] Gather Info ──► Read error messages, logs, stack traces
+  ├─► [2] Reproduce ──► Bash: run failing test/command
+  ├─► [3] Hypothesize
+  │   ├── H1: most likely (check first)
+  │   ├── H2: second candidate
+  │   └── H3: edge case
+  ├─► [4] Investigate ──► Read + Grep per hypothesis
+  │   ├── confirmed? ──► ROOT CAUSE FOUND
+  │   └── rejected ──► next hypothesis or broaden search
+  ├─► [5] Design Fix ──► minimal change targeting root cause
+  └─► [6] Check Regressions ──► what else could break?
+      │
+      └─► OUTPUT: CREWKIT_HANDOFF { design, files, decisions, plan_steps }
+```
+
+### Tool Usage by Mode
+
+```
+             Glob   Read   Grep   Bash   Write   Agent
+Product       ■      ■      ■      ○      ○       ○
+Architecture  ■      ■      ■      ○      ○       ■
+Debug         ■      ■      ■      ■      ○       ○
+
+■ = frequently used   ○ = occasionally used
+```
