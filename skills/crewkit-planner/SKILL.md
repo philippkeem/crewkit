@@ -43,32 +43,48 @@ For detailed mode-specific guidance, read the corresponding file in `references/
 
 ### Process
 1. **Understand the problem** — what pain point does this solve?
-2. **Read existing code** — use Glob and Read to understand the codebase structure
+2. **Deep code context analysis** — this is NOT optional skimming. You MUST:
+   - Read `package.json` / `go.mod` / `requirements.txt` to know the exact stack and dependencies
+   - Read existing files that will be modified — understand their imports, exports, types
+   - Read adjacent files (same directory) to understand local patterns
+   - Identify: component patterns, state management, routing, styling approach, API patterns
+   - Find existing type definitions / interfaces that the new code must conform to
+   - Check for shared utilities, constants, configs that should be reused (not duplicated)
 3. **Challenge premises** — is this the right problem to solve?
 4. **Define scope** — start with MVP, note future enhancements
 5. **Design the solution** — component breakdown, data flow, API design
 6. **List files** — every file that needs to be created or modified
-7. **Write plan steps** — ordered implementation steps with clear acceptance criteria
+7. **Write plan steps** — ordered, each step must include:
+   - Exact file paths
+   - Function/component signatures with parameter types
+   - Which existing imports/utilities to use
+   - Which existing types/interfaces to conform to
+   - Acceptance criteria
 
 ### Principles
 - YAGNI ruthlessly — remove unnecessary features
 - Lead with your recommended approach
 - Scale each section to its complexity
 - Be specific about files and functions, not vague
+- **Every plan step must be implementable without the builder needing to guess** — include exact types, imports, and function signatures
 
 ## Architecture Mode
 
 ### Process
-1. **Read existing code** — understand current architecture thoroughly
+1. **Deep code context analysis** — understand current architecture thoroughly:
+   - Read ALL files that will be modified (not just skim — read the full content)
+   - Read their imports and dependencies to understand the dependency graph
+   - Identify existing type definitions, interfaces, and shared utilities
+   - Map the current data flow end-to-end
 2. **Identify components** — what needs to change and why
 3. **Design data flow** — inputs → processing → outputs
 4. **Map edge cases** — what can go wrong at each step
-5. **Define interfaces** — function signatures, types, API contracts
-6. **Write implementation plan** — step-by-step with dependencies marked
+5. **Define interfaces** — function signatures with exact types, API contracts with request/response shapes
+6. **Write implementation plan** — step-by-step with dependencies marked, each step includes exact types and imports
 
 ### Output
 - File list with specific changes needed per file
-- Interface definitions (function signatures, types)
+- Interface definitions (function signatures, types) — **exact code, not descriptions**
 - Test matrix (what needs testing)
 - Risk assessment (what could go wrong)
 
@@ -104,6 +120,21 @@ mode: <product|architecture|debug>
 output:
   design: |
     <Brief summary of the design/analysis. 2-5 sentences.>
+  code_context:
+    stack: "<detected stack, e.g. next.js 14 + typescript + tailwind>"
+    existing_patterns:
+      - "<pattern 1: e.g. 'components use named exports with Props type'>"
+      - "<pattern 2: e.g. 'API routes use app router at src/app/api/'>"
+    key_types:
+      - "<type 1: e.g. 'User type in src/types/user.ts'>"
+      - "<type 2: e.g. 'ApiResponse<T> in src/lib/api.ts'>"
+    shared_utilities:
+      - "<utility: e.g. 'fetchApi() in src/lib/fetch.ts — use for all API calls'>"
+    verify_commands:
+      build: "<e.g. npm run build>"
+      typecheck: "<e.g. npx tsc --noEmit>"
+      dev: "<e.g. npm run dev>"
+      test: "<e.g. npm test>"
   files:
     - <path/to/file1>
     - <path/to/file2>
@@ -112,11 +143,15 @@ output:
     - "<Key decision 2>"
   plan_steps:
     - step: 1
-      description: "<What to do first>"
+      description: "<What to do — specific enough to implement without guessing>"
       files: [<relevant files>]
+      imports: ["<exact imports needed, e.g. 'import { User } from @/types/user'>"]
+      types: ["<exact type signatures, e.g. 'function createUser(data: CreateUserInput): Promise<User>'>"]
     - step: 2
       description: "<What to do second>"
       files: [<relevant files>]
+      imports: ["<exact imports needed>"]
+      types: ["<exact type signatures>"]
 ```
 
 ## LOCALE
