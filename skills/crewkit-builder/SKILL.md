@@ -47,11 +47,32 @@ This ensures new code follows project conventions from the start instead of rein
 
 From the context provided, extract:
 - `design` — what to build and why
+- `code_context` — stack, existing patterns, key types, shared utilities, verify commands
 - `files` — which files to create/modify
-- `plan_steps` — ordered steps to follow
+- `plan_steps` — ordered steps to follow (with imports and types per step)
 - `decisions` — key decisions to respect
 
-### Step 2: Assess Parallelization
+### Step 2: Read Existing Code (MANDATORY — DO NOT SKIP)
+
+Before writing ANY code, you MUST read and understand the existing codebase:
+
+```
+1. Read EVERY file listed in the planner handoff's `files` array (if they already exist)
+2. Read files referenced in `code_context.key_types` and `code_context.shared_utilities`
+3. For each file you will modify, also read its imports — follow the import chain one level deep
+4. Note: import paths, export patterns, naming conventions, type patterns, error handling patterns
+```
+
+**Why this matters**: If you skip this, you will write code with wrong imports, incompatible types, missing props, and broken integrations. These bugs pass type checking but fail at runtime.
+
+**Output of this step** (mental checklist, not written output):
+- [ ] I know the exact import paths used in this project (e.g., `@/components` vs `../components`)
+- [ ] I know the existing type definitions my new code must conform to
+- [ ] I know which shared utilities exist so I don't duplicate them
+- [ ] I know the component/function patterns (hooks? classes? server components?)
+- [ ] I know the styling approach (CSS modules? Tailwind? styled-components?)
+
+### Step 3: Assess Parallelization
 
 Check if plan steps have dependencies:
 - **Independent steps** (no shared state) → can dispatch as parallel Agent subprocesses
@@ -59,9 +80,9 @@ Check if plan steps have dependencies:
 
 When parallelizing, launch each independent step as a separate Agent with clear instructions.
 
-### Step 3: For Each Plan Step — TDD Cycle
+### Step 4: For Each Plan Step — TDD Cycle
 
-#### 3a. RED — Write Tests First
+#### 4a. RED — Write Tests First
 
 ```
 1. Create test file if it doesn't exist
@@ -70,7 +91,7 @@ When parallelizing, launch each independent step as a separate Agent with clear 
 4. If tests pass without implementation, the test is wrong — fix the test
 ```
 
-#### 3b. GREEN — Write Minimal Implementation
+#### 4b. GREEN — Write Minimal Implementation
 
 ```
 1. Write the minimum code needed to make tests pass
@@ -78,7 +99,7 @@ When parallelizing, launch each independent step as a separate Agent with clear 
 3. If tests fail, fix the implementation (not the test)
 ```
 
-#### 3c. REFACTOR — Clean Up
+#### 4c. REFACTOR — Clean Up
 
 ```
 1. Look for duplication, unclear naming, unnecessary complexity
@@ -86,22 +107,81 @@ When parallelizing, launch each independent step as a separate Agent with clear 
 3. Run tests → they MUST STILL PASS
 ```
 
-### Step 4: Integration Verification
+### Step 5: Integration & Runtime Verification (MANDATORY — DO NOT SKIP)
 
-After all steps complete:
+After all steps complete, run these checks **in order**. If any check fails, fix the issue before proceeding to the next check. Do NOT skip ahead.
+
+#### 5a. Type Check (for typed languages)
 
 ```bash
-# Run full test suite (detect framework automatically)
-# Try in order: npm test, bun test, pytest, go test, etc.
-npm test 2>/dev/null || bun test 2>/dev/null || echo "No test runner found"
+# Use the verify command from planner's code_context.verify_commands.typecheck
+# Common examples:
+npx tsc --noEmit 2>&1          # TypeScript
+go vet ./... 2>&1               # Go
+mypy . 2>&1                     # Python with mypy
 ```
 
-Check:
-- All tests pass
-- Build compiles without errors
-- Coverage meets threshold (from config, default 80%)
+If type errors exist: fix them NOW. Do not proceed with type errors.
 
-### Step 5: Report Changes
+#### 5b. Lint Check
+
+```bash
+# Use project's lint command if available
+npm run lint 2>&1               # or: npx eslint . --ext .ts,.tsx
+```
+
+Fix lint errors (not warnings) before proceeding.
+
+#### 5c. Test Suite
+
+```bash
+# Use the verify command from planner's code_context.verify_commands.test
+npm test 2>&1 || bun test 2>&1 || pytest 2>&1 || go test ./... 2>&1
+```
+
+All tests must pass. Coverage must meet threshold (from config, default 80%).
+
+#### 5d. Build Check
+
+```bash
+# Use the verify command from planner's code_context.verify_commands.build
+npm run build 2>&1              # or equivalent for the project
+```
+
+If build fails: fix the issue. Common causes: missing imports, wrong paths, unused variables with strict mode.
+
+#### 5e. Dev Server Smoke Test (for web projects)
+
+```bash
+# Start dev server in background, wait for it to be ready, then check for errors
+# Use the verify command from planner's code_context.verify_commands.dev
+
+# Example for Next.js / Vite / etc:
+timeout 30 npm run dev 2>&1 &
+DEV_PID=$!
+sleep 10
+
+# Check if process is still running (didn't crash)
+if kill -0 $DEV_PID 2>/dev/null; then
+  # Try to fetch the main page
+  curl -sf http://localhost:3000 > /dev/null 2>&1 || curl -sf http://localhost:5173 > /dev/null 2>&1
+  CURL_STATUS=$?
+  kill $DEV_PID 2>/dev/null
+  wait $DEV_PID 2>/dev/null
+  if [ $CURL_STATUS -ne 0 ]; then
+    echo "WARNING: Dev server started but page not reachable"
+  fi
+else
+  wait $DEV_PID 2>/dev/null
+  echo "ERROR: Dev server crashed on startup"
+fi
+```
+
+If the dev server crashes: fix the issue. Common causes: missing environment variables, port conflicts, runtime import errors.
+
+**Note**: Skip this step for libraries, CLI tools, or backend-only projects without a dev server.
+
+### Step 6: Report Changes
 
 List every file created or modified with a brief description of what changed.
 
@@ -159,6 +239,12 @@ output:
     - <path/to/test/file2>
   coverage: "<percentage or 'N/A' if no coverage tool>"
   build_status: pass | fail
+  verify_results:
+    typecheck: pass | fail | skipped
+    lint: pass | fail | skipped
+    test: pass | fail | skipped
+    build: pass | fail | skipped
+    dev_server: pass | fail | skipped
 ```
 
 ## LOCALE
@@ -170,12 +256,15 @@ All user-facing output (change summaries, progress descriptions) MUST be in the 
 
 ## IMPORTANT RULES
 
+- NEVER skip reading existing code (Step 2) — this prevents 80% of runtime errors
 - NEVER skip writing tests — TDD is not optional
 - NEVER write more code than needed to pass the current test
 - ALWAYS run tests after writing them to confirm RED state
 - ALWAYS run tests after implementation to confirm GREEN state
+- ALWAYS use the exact imports and types from the planner's handoff `code_context` — do NOT guess import paths
+- ALWAYS run the full verification chain (Step 5: typecheck → lint → test → build → dev server) before completing
+- If ANY verification step fails, fix it before completing — do NOT hand off broken code
 - If coverage is below threshold, add more tests before completing
-- If build fails, fix it before completing — do NOT hand off broken code
 - Keep changes minimal and focused — no drive-by refactoring
 - Respect the planner's design decisions — don't redesign
 
@@ -186,18 +275,24 @@ All user-facing output (change summaries, progress descriptions) MUST be in the 
 ### Builder Execution Flow
 
 ```
-PLANNER HANDOFF ──► { design, files, decisions, plan_steps }
+PLANNER HANDOFF ──► { design, code_context, files, decisions, plan_steps }
   │
   ├─► [1] READ HANDOFF
-  │   └── extract plan_steps + files + design intent
+  │   └── extract plan_steps + files + code_context + design intent
   │
-  ├─► [2] ASSESS PARALLELIZATION
+  ├─► [2] READ EXISTING CODE (MANDATORY)
+  │   ├── read every file in handoff's files[] that already exists
+  │   ├── read files in code_context.key_types + shared_utilities
+  │   ├── follow imports one level deep
+  │   └── checklist: imports ✓ types ✓ patterns ✓ utilities ✓ styling ✓
+  │
+  ├─► [3] ASSESS PARALLELIZATION
   │   │
   │   │   step dependencies?
   │   ├── independent steps ──► group into parallel batches
   │   └── dependent steps ───► mark sequential order
   │
-  ├─► [3] FOR EACH STEP: TDD CYCLE
+  ├─► [4] FOR EACH STEP: TDD CYCLE
   │   │
   │   │   ┌──────────────────────────────────────────┐
   │   │   │          TDD Loop (per step)             │
@@ -223,17 +318,19 @@ PLANNER HANDOFF ──► { design, files, decisions, plan_steps }
   │   │
   │   └── next step (or parallel batch)
   │
-  ├─► [4] INTEGRATION VERIFICATION
-  │   ├── run full test suite
-  │   ├── check build compiles
-  │   └── check coverage >= threshold
+  ├─► [5] INTEGRATION & RUNTIME VERIFICATION (all must pass)
+  │   ├── [5a] typecheck ──► tsc --noEmit / go vet / mypy ──► fix if fail
+  │   ├── [5b] lint ──► eslint / golint ──► fix errors
+  │   ├── [5c] test suite ──► npm test / go test ──► fix if fail
+  │   ├── [5d] build ──► npm run build ──► fix if fail
+  │   └── [5e] dev server smoke test ──► start, curl, verify no crash
   │       │
-  │       ├── coverage OK ──► proceed
-  │       └── below threshold ──► add more tests ──► re-check
+  │       ├── all pass ──► proceed to report
+  │       └── any fail ──► fix and re-run from failing step
   │
-  └─► [5] REPORT
+  └─► [6] REPORT
       │
-      └─► OUTPUT: CREWKIT_HANDOFF { changes, tests, coverage, build_status }
+      └─► OUTPUT: CREWKIT_HANDOFF { changes, tests, coverage, build_status, verify_results }
 ```
 
 ### Parallelization Decision Tree
@@ -273,3 +370,9 @@ Common pitfalls to avoid as the Builder:
 6. **Forgetting integration tests** — Writing unit tests only and skipping the integration verification step. Always run the full test suite at the end to catch interaction bugs.
 
 7. **Template blindness** — Using scaffolding templates without adapting them to the specific use case. Templates are starting points, not final code.
+
+8. **Guessing imports** — Writing `import { User } from './types'` without verifying the actual path. Always check existing imports in the project — wrong import paths pass type checking with `any` fallback but crash at runtime.
+
+9. **Skipping runtime verification** — Tests pass, build passes, but the app crashes when you open it. Always run the dev server smoke test for web projects. A test suite that covers logic doesn't catch missing CSS, broken routing, or hydration errors.
+
+10. **Not reading existing code** — Writing new code without reading the files you're modifying. This leads to duplicate utilities, incompatible types, wrong patterns, and broken integrations. Step 2 exists to prevent this.
