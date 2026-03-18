@@ -281,9 +281,19 @@ Progress bar calculation:
 **Single role stage**: Launch one agent.
 **Parallel role stage**: Launch multiple agents simultaneously using parallel Agent tool calls.
 
+**CRITICAL: Agent Type**: ALL role agents MUST be launched as `general-purpose` agents (the default Agent type). Do NOT use the role name as the agent type. The role's behavior is defined by the SKILL.md content passed in the prompt, not by the agent type.
+
+```
+✅ Correct: Agent(prompt: "[SKILL.md content + context]")
+             → uses default general-purpose agent type
+
+❌ Wrong:   Agent(subagent_type: "crewkit:crewkit-builder", prompt: "...")
+             → this agent type does not exist and will error
+```
+
 Each role has its own SKILL.md with detailed instructions.
 
-**CRITICAL**: When launching a role agent, you MUST include in the prompt:
+**CRITICAL: Prompt Content**: When launching a role agent, you MUST include in the prompt:
 1. The role's full SKILL.md content (read it first)
 2. The user's original request/args
 3. The handoff data from the previous stage (if any)
@@ -758,9 +768,9 @@ If installed via `git clone` into skills directory, role files are also at:
       ├─► [2] READ ROLE SKILL.MD(s)
       │   └── skills/crewkit-<role>/SKILL.md (for each role in stage)
       │
-      ├─► [3] LAUNCH AGENT(s)
-      │   ├── single role:   one Agent call
-      │   └── parallel roles: multiple Agent calls in same message (concurrent)
+      ├─► [3] LAUNCH AGENT(s) — always general-purpose type (NEVER use role name as agent type)
+      │   ├── single role:   one Agent call (general-purpose)
+      │   └── parallel roles: multiple Agent calls in same message (concurrent, all general-purpose)
       │   └── prompt = SKILL.md + user args + previous handoffs + config + prev-run delta
       │
       ├─► [4] EXTRACT HANDOFF(s)
