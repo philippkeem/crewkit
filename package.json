@@ -1,6 +1,6 @@
 {
   "name": "crewkit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Turn Claude Code into a team of specialized experts with role-based pipelines and real-time monitoring.",
   "author": "crewkit",
   "license": "MIT",

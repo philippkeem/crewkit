@@ -2,15 +2,15 @@
 
 ## Pipeline
 ```
-planner → builder → reviewer → tester → shipper
+planner → builder → [reviewer + security] → tester → shipper
 ```
 
 ## Used By
-- `/crew build` (planner → builder → reviewer, without shipper)
+- `/crew build` (planner → builder → [reviewer + security], without shipper/tester)
 - `/crew ship` when starting from scratch
 
 ## Description
-The complete development lifecycle from design to deployment.
+The complete development lifecycle from design to deployment, with parallel quality gates.
 
 ## Role Configuration
 
@@ -21,15 +21,20 @@ The complete development lifecycle from design to deployment.
 ### builder
 - TDD enforced
 - Parallel dispatch for independent tasks
+- Scaffolding templates used when available
 
-### reviewer
-- Full checklist (security, data, logic, performance, quality)
-- Gate: configurable (default C)
+### reviewer + security (parallel stage)
+- Reviewer: full checklist (data, logic, performance, quality)
+- Security: OWASP Top 10, dependency audit, secrets scan
+- Gate: reviewer score (default C) + security verdict (default PASS)
+- Both run simultaneously — pipeline pauses if either fails gate
 
 ### tester
 - Mode: unit + diff-qa
 - Coverage threshold enforced
+- Product verification with assertions when browse mode enabled
 
 ### shipper
 - Pre-flight check required
 - Strategy from .crewkit.yml
+- Optional babysit mode for CI monitoring
