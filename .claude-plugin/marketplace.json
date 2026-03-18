@@ -9,8 +9,8 @@
     {
       "name": "crewkit",
       "source": "./",
-      "description": "5 expert roles, 6 commands, automated pipelines with real-time monitoring.",
-      "version": "0.1.0"
+      "description": "7 expert roles, 9 commands, automated pipelines with real-time monitoring.",
+      "version": "0.2.0"
     }
   ]
 }
