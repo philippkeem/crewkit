@@ -231,19 +231,120 @@ git push origin feat/42-new-feature
 
 ---
 
-## 9. 이슈 & 라벨 시스템
+## 9. 이슈 정책
 
-### 이슈 타입 라벨
+### 9.1 이슈를 만드는 경우
+
+| 상황 | 필수 여부 | 설명 |
+|------|-----------|------|
+| 버그 발견 | **필수** | 재현 조건과 기대 동작을 기록한다 |
+| 새 기능 개발 | **필수** | 구현 전에 이슈로 "무엇을 왜" 명시한다. PR에서 `Closes #이슈번호`로 연결한다 |
+| 대규모 리팩토링 | **필수** | RFC 라벨로 이슈 생성 후 논의한다 (섹션 10.5 참고) |
+| 문서 개선 | 권장 | 간단한 오타 수정은 이슈 없이 PR 가능 |
+| 외부 사용자 피드백 | **필수** | 버그/기능 요청 모두 이슈로 받는다 |
+
+**원칙: Issue First** — 코드를 쓰기 전에 이슈를 먼저 만든다. 이슈 없는 PR은 허용하지만, 기능/버그 수정 PR에는 이슈 연결을 권장한다.
+
+### 9.2 이슈 작성 규칙
+
+**제목**: 한 줄로 문제/요청을 명확하게 표현한다.
+
+```
+✅ Builder produces runtime errors despite passing build
+✅ Add dev server smoke test to verification chain
+❌ 에러 남
+❌ 개선 필요
+```
+
+**본문 구조**:
+
+버그 리포트:
+```markdown
+## Problem
+무엇이 문제인지 설명
+
+## Steps to Reproduce
+1. /crew build 실행
+2. npm run dev 실행
+3. 브라우저에서 확인
+
+## Expected
+정상적으로 렌더링되어야 함
+
+## Actual
+흰 화면 + 콘솔 에러
+
+## Environment
+- crewkit v0.2.0
+- Node 20, macOS
+```
+
+기능 요청:
+```markdown
+## Description
+무엇이 필요한지 설명
+
+## Proposed Solution
+제안하는 해결 방법
+
+## Alternatives Considered
+검토했지만 선택하지 않은 대안
+
+## Depends on
+- #이슈번호 (있다면)
+```
+
+### 9.3 이슈 생명주기
+
+```
+Open → In Progress → Done (PR merged → auto-close)
+  │                    ↑
+  │                    └── PR에 "Closes #N" 포함 시 자동 닫힘
+  │
+  └→ Won't Fix / Duplicate → Close with label
+```
+
+| 상태 | 의미 |
+|------|------|
+| `open` | 아직 작업 시작 안 함 |
+| `in progress` | 누군가 작업 중 (PR 연결됨) |
+| `closed` | 해결됨 (PR merge) 또는 Won't Fix |
+
+- PR 본문에 `Closes #N`, `Fixes #N`, `Resolves #N` 키워드를 사용하면 PR merge 시 이슈가 자동으로 닫힌다
+- 중복 이슈는 `duplicate` 라벨을 붙이고 원본 이슈를 참조하며 닫는다
+- 재현 불가능한 버그는 `cannot reproduce` 라벨을 붙이고 30일 후 닫는다
+
+### 9.4 이슈-브랜치-PR 연결
+
+```
+Issue #12: "Engine should validate builder's verify_results"
+    ↓
+Branch: feat/12-engine-verify-gate
+    ↓
+PR: "feat(engine): add builder verify_results gate check (Closes #12)"
+    ↓
+Merge → Issue #12 자동 닫힘
+```
+
+브랜치 이름에 이슈 번호를 포함하고, PR에서 `Closes` 키워드로 연결한다.
+
+### 9.5 라벨 시스템
+
+#### 타입 라벨
 
 | 라벨 | 설명 |
 |------|------|
 | `bug` | 버그 리포트 |
-| `feature` | 기능 요청 |
+| `enhancement` | 기능 요청/개선 |
 | `docs` | 문서 개선 |
 | `good first issue` | 첫 기여자용 쉬운 이슈 |
 | `help wanted` | 기여 환영하는 이슈 |
+| `rfc` | 대규모 변경 제안 (논의 필요) |
+| `duplicate` | 중복 이슈 |
+| `cannot reproduce` | 재현 불가 |
+| `wontfix` | 수정하지 않기로 결정 |
 
-### 우선순위 라벨
+#### 우선순위 라벨
 
 | 라벨 | 설명 |
 |------|------|
@@ -252,7 +353,7 @@ git push origin feat/42-new-feature
 | `priority: medium` | 계획에 포함 |
 | `priority: low` | 여유 있을 때 |
 
-### 모듈 라벨
+#### 모듈 라벨
 
 `scope: engine` `scope: planner` `scope: builder` `scope: reviewer` `scope: tester` `scope: shipper`
 
@@ -278,10 +379,11 @@ npm install
 1. 이슈 확인/생성  →  2. Fork & 브랜치  →  3. 구현  →  4. 테스트  →  5. PR 제출  →  6. 리뷰  →  7. 머지
 ```
 
-#### Step 1: 이슈 먼저
+#### Step 1: 이슈 먼저 (섹션 9 참고)
 
 - 버그 수정: 기존 이슈가 없으면 새로 생성한다
 - 새 기능: 이슈에서 **먼저 논의**한 후 구현한다 (불필요한 작업 방지)
+- PR에 `Closes #이슈번호`를 포함하여 이슈와 연결한다
 - `good first issue` 라벨이 붙은 이슈는 첫 기여자에게 적합하다
 
 #### Step 2: 브랜치 생성
