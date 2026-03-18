@@ -11,13 +11,35 @@ locale: "auto"                         # auto | en | ko | ja | zh | es | fr | de
 
 pipeline:
   build:
-    skip: []                          # roles to skip: [reviewer, tester]
+    skip: []                          # roles to skip: [reviewer, tester, security]
     reviewer:
       gate: "C"                       # minimum score: A | B | C | D
+    security:
+      gate: "PASS"                    # minimum verdict: PASS | WARN | FAIL
   ship:
     strategy: "pr"                    # pr | auto-merge | direct-push
     changelog: true                   # auto-generate CHANGELOG.md
     version-bump: "semver"            # semver | calver | manual
+    babysit: false                    # monitor PR CI after creation
+    babysit-timeout: 10               # max babysit monitoring time in minutes
+    deploy:
+      verify-url: ""                  # health check URL after deploy (empty = skip)
+      rollback: false                 # auto-create rollback PR on failure
+
+# Custom pipelines — define your own role sequences
+# pipelines:
+#   secure-build:
+#     stages:
+#       - planner
+#       - builder
+#       - parallel: [reviewer, security]
+#       - tester
+#     gate:
+#       reviewer: "B"
+#       security: "PASS"
+#   quick-review:
+#     stages:
+#       - parallel: [reviewer, tester]
 
 tester:
   browse:
@@ -25,6 +47,41 @@ tester:
     cookies-from: "chrome"            # chrome | arc | brave | edge
   coverage:
     minimum: 80                       # minimum test coverage %
+  verification:
+    record-video: false               # record test execution video
+    artifacts-dir: ".crewkit/artifacts" # where to save screenshots/videos
+
+security:
+  dependency-audit: true              # run npm audit / pip audit / go vuln check
+  secrets-scan: true                  # scan for hardcoded secrets
+  owasp-check: true                   # OWASP Top 10 analysis
+
+reviewer:
+  adversarial: false                  # enable adversarial review by default
+  max-adversarial-iterations: 3       # max critic loops before surfacing to user
+
+runbook:
+  services: []                        # service health check definitions
+  # - name: "api"
+  #   health: "curl -s http://localhost:3000/health"
+  #   logs: "docker logs api --tail 100"
+  # - name: "database"
+  #   health: "pg_isready -h localhost"
+  #   logs: "docker logs postgres --tail 100"
+  common_issues: []                   # symptom → check mapping
+  # - symptom: "500 errors on /api/*"
+  #   check: ["database connection", "recent migrations", "memory usage"]
+
+builder:
+  templates-dir: ".crewkit/templates" # scaffolding templates directory
+  # Templates are markdown files with code blocks and {{placeholder}} markers
+  # e.g., api-endpoint.template.md, component.template.md
 
 monitor:
   verbose: true                       # show tool-level details in status bar
+
+retry:
+  max-per-role: 3                     # maximum retry attempts per role
+
+history:
+  max-entries: 100                    # max entries in history.jsonl

@@ -9,20 +9,21 @@ planner(debug) → builder → tester
 - `/crew fix`
 
 ## Description
-Bug fix cycle — diagnose, fix, verify. Skips formal review for speed but always runs tests.
+Bug fix cycle: diagnose, fix, verify. Skips formal review and security for speed but always runs tests.
 
 ## Role Configuration
 
 ### planner
-- Mode: debug (forced)
-- Systematic debugging: hypothesis → evidence → root cause
+- Mode: **debug** (forced)
+- Investigates root cause before any fix is attempted
+- Outputs hypothesis and evidence
 
 ### builder
-- Write regression test first (proves the bug exists)
-- Implement minimal fix
-- Verify regression test passes
+- Implements the fix based on planner's diagnosis
+- TDD: writes regression test first, then fixes
+- Scaffolding templates used when available
 
 ### tester
 - Mode: unit + diff-qa
-- Run full test suite to check for regressions
-- Focus on the area around the fix
+- Verifies the fix resolves the issue
+- Checks no regressions introduced

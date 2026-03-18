@@ -2,23 +2,24 @@
 
 ## Pipeline
 ```
-reviewer → tester
+[reviewer + security] → tester
 ```
 
 ## Used By
 - `/crew review`
 
 ## Description
-Code review with automated testing. Use when code is already written and needs review before merging.
+Code review with security audit and automated testing. For reviewing already-written code before merging.
 
 ## Role Configuration
 
-### reviewer
-- Full checklist
-- Gate: configurable (default C)
-- Review all changes in current branch vs base branch
+### reviewer + security (parallel stage)
+- Reviewer: full quality checklist on current git diff
+- Security: vulnerability scan on changed files
+- Both run simultaneously for efficiency
+- Optional `--adversarial` flag for critic sub-agent loop
 
 ### tester
 - Mode: unit + diff-qa
-- Run tests to validate reviewer's findings
-- Coverage check
+- Tests only affected areas based on changed files
+- Coverage check against threshold

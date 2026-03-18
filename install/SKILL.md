@@ -1,6 +1,6 @@
 ---
 name: crewkit-install
-version: 0.1.0
+version: 0.2.0
 description: |
   Interactive installer for Crewkit — guides users through setup within Claude Code.
   Handles /crew install, /crew update, /crew uninstall, /crew doctor, /crew config.
